@@ -18,17 +18,119 @@ canvas {
   background: transparent;
 }
 
+/* ==================== START SCREEN ==================== */
+#startScreen {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #ff69b4, #ff1493, #ffd4e5);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;     /* Mulai dari atas */
+  align-items: center;             /* Semua elemen rata tengah horizontal */
+  padding-top: 10vh;               /* Jarak dari atas - ubah jadi 5vh kalau mau lebih tinggi, 15vh kalau lebih rendah */
+  text-align: center;
+  z-index: 100;
+  transition: opacity 0.5s ease-out;
+}
+
+#startScreen h1 {
+  font-size: clamp(60px, 12vw, 120px);
+  color: white;
+  text-shadow: 5px 5px 10px rgba(0, 0, 0, 0.5);
+  margin-bottom: 40px;
+  animation: bounce 2s infinite;
+}
+
+#startScreen p {
+  font-size: clamp(20px, 5vw, 38px);
+  color: white;
+  margin-bottom: 60px;
+  text-shadow: 2px 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+#playButton {
+  font-size: clamp(28px, 7vw, 56px);
+  font-family: inherit;
+  background: linear-gradient(45deg, #ff1493, #ff69b4);
+  color: white;
+  border: none;
+  padding: 20px 60px;
+  border-radius: 50px;
+  cursor: pointer;
+  box-shadow: 0 10px 25px rgba(255, 20, 147, 0.5);
+  transition: all 0.3s ease;
+  animation: pulse 2s infinite;
+}
+
+#playButton:hover,
+#playButton:active {
+  transform: scale(1.1);
+  box-shadow: 0 15px 35px rgba(255, 20, 147, 0.7);
+}
+
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-15px); }
+  60% { transform: translateY(-8px); }
+}
+
+@keyframes pulse {
+  0% { box-shadow: 0 10px 25px rgba(255, 20, 147, 0.5); }
+  50% { box-shadow: 0 15px 35px rgba(255, 20, 147, 0.7); }
+  100% { box-shadow: 0 10px 25px rgba(255, 20, 147, 0.5); }
+}
+
+/* ==================== INSTRUCTIONS ==================== */
 #instructions {
   position: absolute;
-  top: 20px;
+  bottom: 30px;
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(255, 255, 255, 0.8);
-  padding: 12px 24px;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 15px 30px;
   border-radius: 30px;
   font-size: 16px;
   text-align: center;
   pointer-events: none;
-  z-index: 10;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  z-index: 50;
+  transition: opacity 0.5s ease;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* ==================== UI SCORE & STREAK ==================== */
+#ui {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  color: #ff1493;
+  font-size: 28px;
+  font-weight: bold;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  z-index: 40;
+}
+
+#ui div {
+  margin: 8px 0;
+}
+
+/* ==================== READY MESSAGE (opsional, kalau masih pakai) ==================== */
+#readyMessage {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: clamp(30px, 6vw, 50px);
+  color: #ff1493;
+  font-weight: bold;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  z-index: 60;
+  pointer-events: none;
+  animation: bounce 1s;
 }

@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dark Archery Mystery 🏹🌙</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      overflow: hidden;
+      background: #000 url('https://img.goodfon.com/original/2268x1360/9/ae/moon-moonlight-half-moon-stars-clouds-night-sky-night-sky-st.jpg') no-repeat center center fixed;
+      background-size: cover;
+      font-family: 'Georgia', serif;
+      color: #ccc;
+      touch-action: manipulation;
+      height: 100vh;
+    }
+    canvas { display: block; margin: 0 auto; background: transparent; }
+
+    /* Start Screen Dark */
+    #startScreen {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.8);
+      display: flex; flex-direction: column; justify-content: flex-start;
+      align-items: center; padding-top: 10vh; text-align: center;
+      z-index: 100; transition: opacity 0.6s ease-out;
+    }
+    #startScreen h1 {
+      font-size: clamp(60px, 12vw, 120px); color: #8a2be2; text-shadow: 0 0 20px #4b0082;
+      margin-bottom: 40px; animation: glow 2s infinite alternate;
+    }
+    #startScreen p { font-size: clamp(20px, 5vw, 38px); color: #bbb; margin-bottom: 60px; }
+    #playButton {
+      font-size: clamp(28px, 7vw, 56px); background: #4b0082; color: #fff;
+      border: 2px solid #8a2be2; padding: 20px 60px; border-radius: 50px;
+      cursor: pointer; box-shadow: 0 0 20px #8a2be2; transition: 0.3s;
+    }
+    #playButton:hover { transform: scale(1.1); box-shadow: 0 0 40px #8a2be2; }
+
+    @keyframes glow { from { text-shadow: 0 0 10px #4b0082; } to { text-shadow: 0 0 30px #8a2be2; } }
+
+    /* Instructions Dark */
+    #instructions { bottom: 30px; background: rgba(0,0,0,0.7); color: #aaa; }
+
+    /* UI Dark */
+    #ui { top: 20px; left: 20px; color: #8a2be2; text-shadow: 0 0 10px #4b0082; }
+
+    /* End Screen Dark */
+    #endScreen { background: rgba(0,0,0,0.9); color: #8a2be2; }
+    #endScreen button { background: #4b0082; box-shadow: 0 0 15px #8a2be2; }
+  </style>
+</head>
+<body>
+  <div id="startScreen">
+    <h1>Dark Archery Mystery 🏹</h1>
+    <p>Pierce the darkness with your arrow...</p>
+    <button id="playButton">ENTER THE NIGHT</button>
+  </div>
+
+  <div id="instructions">
+    Mouse/Touch: Aim & Pull • Release to Shoot in the Dark
+  </div>
+
+  <div id="ui">
+    <div id="score">Score: 0</div>
+  </div>
+
+  <div id="endScreen">
+    <h2 id="endMessage"></h2>
+    <button id="tryAgainBtn">Try Again</button>
+    <button id="closeBtn">Return to Shadows</button>
+  </div>
+
+  <canvas id="gameCanvas"></canvas>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    let gameStarted = false, gameOver = false;
+    let score = 0;
+
+    function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+    resizeCanvas(); window.addEventListener('resize', resizeCanvas);
+
+    function updatePositions() {
+      bow.x = canvas.width * 0.15; bow.y = canvas.height / 2;
+      target.x = canvas.width * 0.85; target.y = canvas.height / 2;
+      target.radius = Math.min(80, canvas.width * 0.1);
+    }
+
+    const bow = { x: 0, y: 0, angle: 0, pull: 0, maxPull: 1 };
+    const target = { x: 0, y: 0, radius: 80 };
+    let arrow = { active: false, x: 0, y: 0, vx: 0, vy: 0 };
+
+    let message = '', messageAlpha = 0, messageTimer = 0;
+
+    const hitMessages = ["You pierce my soul 💜", "In the dark, you found me 🌙", "Eternal night binds us 🖤"];
+    const missMessages = ["Lost in shadows...", "The night hides it", "Try again, my shadow"];
+
+    function updateUI() { document.getElementById('score').innerText = `Score: ${score}`; }
+
+    function startGame() {
+      gameStarted = true; gameOver = false; score = 0; updateUI();
+      document.getElementById('startScreen').style.opacity = '0';
+      setTimeout(() => document.getElementById('startScreen').style.display = 'none', 600);
+      document.getElementById('instructions').style.opacity = '0.7';
+      document.getElementById('ui').style.opacity = '1';
+      document.getElementById('endScreen').style.display = 'none';
+      updatePositions();
+    }
+
+    window.addEventListener('load', () => {
+      document.getElementById('playButton').addEventListener('click', startGame);
+      document.getElementById('tryAgainBtn').addEventListener('click', startGame);
+      document.getElementById('closeBtn').addEventListener('click', () => {
+        document.getElementById('startScreen').style.display = 'flex';
+        document.getElementById('startScreen').style.opacity = '1';
+        gameStarted = false;
+      });
+    });
+
+    // Kontrol sama seperti sebelumnya (mouse/touch)
+    let isPulling = false, mouseX = 0, mouseY = 0;
+
+    function updateBowAngle() {
+      const dx = mouseX - bow.x; const dy = mouseY - bow.y;
+      bow.angle = Math.atan2(dy, dx);
+      bow.angle = Math.max(-Math.PI / 3, Math.min(Math.PI / 3, bow.angle));
+    }
+
+    // Event listeners sama seperti versi sebelumnya...
+
+    // (Kode kontrol, shootArrow, checkHit, animate sama, tapi warna dark)
+    // Untuk ring target: colors = ['#4b0082', '#8a2be2', '#2f004f', '#000'];
+    // Bow: strokeStyle = '#222' dan '#111'
+    // Arrow: '#8a2be2' glowing
+
+    // Tambah partikel glowing saat hit untuk efek dark magic
+
+    animate();
+  </script>
+</body>
+</html>
