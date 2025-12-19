@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Archery Love Game 💘</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: linear-gradient(to bottom, #ffeef8, #ffd4e5);
+      font-family: 'Comic Sans MS', cursive, sans-serif;
+      touch-action: manipulation;
+    }
+    canvas {
+      display: block;
+      margin: 0 auto;
+    }
+    #instructions {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(255, 255, 255, 0.7);
+      padding: 10px 20px;
+      border-radius: 20px;
+      font-size: 14px;
+      text-align: center;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="instructions">
+    Desktop: Gerakkan mouse untuk arahkan busur<br>
+    Klik & tarik ke belakang lalu lepas untuk tembak 💘<br>
+    Mobile: Sentuh & geser untuk arahkan dan tarik
+  </div>
+  <canvas id="gameCanvas"></canvas>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // Responsif
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    // Game variables
+    const bow = {
+      x: canvas.width * 0.15,
+      y: canvas.height / 2,
+      angle: 0,          // dalam radian
+      pull: 0,           // 0 sampai 1 (kekuatan tarikan)
+      maxPull: 1
+    };
+
+    const target = {
+      x: canvas.width * 0.85,
+      y: canvas.height / 2,
+      radius: 80
+    };
+
+    let arrow = {
+      active: false,
+      x: 0, y: 0,
+      vx: 0, vy: 0
+    };
+
+    let score = 0;
+    let streak = 0;
+    let message = '';
+    let messageAlpha = 0;
+    let messageTimer = 0;
+
+    const hitMessages = [
+      "I love you 💕",
+      "You good baby 😘",
+      "I love you so much ❤️",
+      "My heart is yours forever 🥰",
+      "You're amazing darling 💖"
+    ];
+
+    const missMessages = [
+      "I miss you 🥺",
+      "Try again lovee 💪",
+      "I trust you honey 😊",
+      "Almost! Keep going ❤️"
+    ];
+
+    // Kontrol
+    let isPulling = false;
+    let mouseX = 0;
+    let mouseY = 0;
+
+    // Update posisi bow berdasarkan mouse/touch
+    function updateBowAngle() {
+      const dx = mouseX - bow.x;
+      const dy = mouseY - bow.y;
+      bow.angle = Math.atan2(dy, dx);
+
+      // Batasi sudut agar realistis (-60° sampai 60° dari horizontal)
+      const minAngle = -Math.PI / 3;
+      const maxAngle = Math.PI / 3;
+      bow.angle = Math.max(minAngle, Math.min(maxAngle, bow.angle));
+    }
+
+    // Event listeners
+    canvas.addEventListener('mousemove', (e) => {
+      mouseX = e.clientX;
+      mouseY = e.clientY;
+      if (!arrow.active) updateBowAngle();
+    });
+
+    canvas.addEventListener('mousedown', (e) => {
+      if (!arrow.active) {
+        isPulling = true;
+      }
+    });
+
+    canvas.addEventListener('mouseup', () => {
+      if (isPulling && !arrow.active) {
+        shootArrow();
+      }
+      isPulling = false;
+      bow.pull = 0;
+    });
+
+    // Touch support untuk mobile
+    canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      const touch = e.touches[0];
+      mouseX = touch.clientX;
+      mouseY = touch.clientY;
+      if (!arrow.active) {
+        isPulling = true;
+        updateBowAngle();
+      }
+    });
+
+    canvas.addEventListener('touchmove', (e) => {
+      e.preventDefault();
+      const touch = e.touches[0];
+      mouseX = touch.clientX;
+      mouseY = touch.clientY;
+      if (!arrow.active) updateBowAngle();
+    });
+
+    canvas.addEventListener('touchend', (e) => {
+      e.preventDefault();
+      if (isPulling && !arrow.active) {
+        shootArrow();
+      }
+      isPulling = false;
+      bow.pull = 0;
+    });
+
+    function shootArrow() {
+      if (bow.pull < 0.2) return; // tarikan terlalu lemah
+
+      arrow.active = true;
+      arrow.x = bow.x + Math.cos(bow.angle) * 80;
+      arrow.y = bow.y + Math.sin(bow.angle) * 80;
+
+      const power = bow.pull * 20;
+      arrow.vx = Math.cos(bow.angle) * power;
+      arrow.vy = Math.sin(bow.angle) * power;
+
+      playSound('twang');
+    }
+
+    function playSound(type) {
+      // Simple beep sebagai placeholder sound
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+
+      if (type === 'twang') {
+        oscillator.frequency.value = 300;
+        gainNode.gain.value = 0.3;
+        oscillator.type = 'sine';
+      } else if (type === 'hit') {
+        oscillator.frequency.value = 800;
+        gainNode.gain.value = 0.4;
+      } else if (type === 'miss') {
+        oscillator.frequency.value = 200;
+        gainNode.gain.value = 0.2;
+      }
+
+      oscillator.start();
+      oscillator.stop(audioCtx.currentTime + 0.2);
+    }
+
+    function checkHit() {
+      const dx = arrow.x - target.x;
+      const dy = arrow.y - target.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+
+      if (dist < target.radius) {
+        // Hit! Tentukan skor berdasarkan jarak dari pusat
+        let points = 10;
+        if (dist < target.radius * 0.3) points = 50;       // bullseye
+        else if (dist < target.radius * 0.5) points = 30;
+        else if (dist < target.radius * 0.7) points = 20;
+
+        score += points;
+        streak++;
+        message = hitMessages[(streak - 1) % hitMessages.length];
+        playSound('hit');
+      } else {
+        streak = 0;
+        message = missMessages[Math.floor(Math.random() * missMessages.length)];
+        playSound('miss');
+      }
+
+      messageAlpha = 1;
+      messageTimer = 120; // 2 detik pada 60fps
+      arrow.active = false;
+    }
+
+    function animate() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Update bow position (fixed di kiri, tapi ikut resize)
+      bow.x = canvas.width * 0.15;
+      target.x = canvas.width * 0.85;
+
+      // Update pull strength saat menarik
+      if (isPulling && !arrow.active) {
+        const dx = mouseX - bow.x;
+        const dy = mouseY - bow.y;
+        const dist = Math.min(Math.sqrt(dx*dx + dy*dy), 200);
+        bow.pull = Math.min(dist / 150, bow.maxPull);
+      }
+
+      // Update arrow physics
+      if (arrow.active) {
+        arrow.vy += 0.3; // gravitasi
+        arrow.x += arrow.vx;
+        arrow.y += arrow.vy;
+
+        // Cek tabrakan dengan target
+        const dx = arrow.x - target.x;
+        const dy = arrow.y - target.y;
+        if (Math.sqrt(dx*dx + dy*dy) < target.radius + 10) {
+          checkHit();
+        }
+
+        // Jika keluar layar
+        if (arrow.x > canvas.width + 100 || arrow.y > canvas.height + 100 || arrow.y < -100) {
+          if (arrow.active) {
+            streak = 0;
+            message = missMessages[Math.floor(Math.random() * missMessages.length)];
+            messageAlpha = 1;
+            messageTimer = 120;
+            playSound('miss');
+          }
+          arrow.active = false;
+        }
+      }
+
+      // Gambar target (dartboard)
+      const rings = [80, 60, 40, 20];
+      const colors = ['#ff4444', '#ffffff', '#ff8888', '#ffff00'];
+      for (let i = 0; i < rings.length; i++) {
+        ctx.beginPath();
+        ctx.arc(target.x, target.y, rings[i], 0, Math.PI * 2);
+        ctx.fillStyle = colors[i];
+        ctx.fill();
+        ctx.strokeStyle = '#333';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+      }
+
+      // Gambar bow
+      ctx.save();
+      ctx.translate(bow.x, bow.y);
+      ctx.rotate(bow.angle);
+
+      // Busur (curve)
+      ctx.strokeStyle = '#8B4513';
+      ctx.lineWidth = 12;
+      ctx.beginPath();
+      ctx.moveTo(-40, -60);
+      ctx.quadraticCurveTo(20 + bow.pull * 50, 0, -40, 60);
+      ctx.stroke();
+
+      // Tali busur (string)
+      ctx.strokeStyle = '#333';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(-40, -60);
+      ctx.lineTo(20 + bow.pull * 100, 0);
+      ctx.lineTo(-40, 60);
+      ctx.stroke();
+
+      // Panah siap tembak
+      if (!arrow.active) {
+        ctx.beginPath();
+        ctx.moveTo(20, 0);
+        ctx.lineTo(80 + bow.pull * 80, 0);
+        ctx.strokeStyle = '#444';
+        ctx.lineWidth = 6;
+        ctx.stroke();
+
+        // Kepala panah
+        ctx.beginPath();
+        ctx.moveTo(80 + bow.pull * 80, 0);
+        ctx.lineTo(70 + bow.pull * 80, -10);
+        ctx.lineTo(70 + bow.pull * 80, 10);
+        ctx.closePath();
+        ctx.fillStyle = '#ff3333';
+        ctx.fill();
+      }
+
+      ctx.restore();
+
+      // Gambar panah yang sedang terbang
+      if (arrow.active) {
+        ctx.save();
+        const arrowAngle = Math.atan2(arrow.vy, arrow.vx);
+        ctx.translate(arrow.x, arrow.y);
+        ctx.rotate(arrowAngle);
+
+        ctx.beginPath();
+        ctx.moveTo(-30, 0);
+        ctx.lineTo(20, 0);
+        ctx.strokeStyle = '#444';
+        ctx.lineWidth = 6;
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(20, 0);
+        ctx.lineTo(10, -10);
+        ctx.lineTo(10, 10);
+        ctx.closePath();
+        ctx.fillStyle = '#ff3333';
+        ctx.fill();
+
+        ctx.restore();
+      }
+
+      // Tampilkan skor
+      ctx.font = '30px Comic Sans MS';
+      ctx.fillStyle = '#ff1493';
+      ctx.textAlign = 'left';
+      ctx.fillText(`Score: ${score}`, 20, 50);
+      ctx.fillText(`Streak: ${streak} 💕`, 20, 90);
+
+      // Tampilkan pesan romantis
+      if (messageTimer > 0) {
+        ctx.font = 'bold 50px Comic Sans MS';
+        ctx.fillStyle = `rgba(255, 20, 147, ${messageAlpha})`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(message, canvas.width / 2, canvas.height / 2 - 50);
+
+        messageAlpha = Math.max(0, messageAlpha - 0.015);
+        messageTimer--;
+      }
+
+      requestAnimationFrame(animate);
+    }
+
+    animate();
+  </script>
+</body>
+</html>
