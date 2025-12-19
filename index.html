@@ -195,7 +195,7 @@
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
 
-    // Partikel Hati
+    // Partikel Hati Berterbangan
     const hearts = [];
 
     class HeartParticle {
@@ -249,6 +249,26 @@
       }
     }
 
+    // Pesan Romantis (kembali seperti awal!)
+    let message = '';
+    let messageAlpha = 0;
+    let messageTimer = 0;
+
+    const hitMessages = [
+      "I love you 💕",
+      "You good baby 😘",
+      "I love you so much ❤️",
+      "My heart is yours forever 🥰",
+      "You're amazing darling 💖"
+    ];
+
+    const missMessages = [
+      "I miss you 🥺",
+      "Try again lovee 💪",
+      "I trust you honey 😊",
+      "Almost! Keep going ❤️"
+    ];
+
     // Game State
     let gameStarted = false;
     let gameOver = false;
@@ -281,18 +301,17 @@
       document.getElementById('score').innerText = `Score: ${score}`;
     }
 
-    // Start Game (untuk Play & Try Again)
+    // Start Game
     function startGame() {
       gameStarted = true;
       gameOver = false;
       score = 0;
       hearts.length = 0;
+      messageTimer = 0;
       updateUI();
 
-      // Sembunyikan end screen & tampilkan game
       document.getElementById('endScreen').style.display = 'none';
 
-      // Sembunyikan start screen
       document.getElementById('startScreen').style.opacity = '0';
       setTimeout(() => {
         document.getElementById('startScreen').style.display = 'none';
@@ -304,21 +323,19 @@
       updatePositions();
     }
 
-    // Kembali ke Menu Awal (untuk Close)
+    // Kembali ke Menu
     function backToMenu() {
       gameStarted = false;
       gameOver = false;
       hearts.length = 0;
+      messageTimer = 0;
 
-      // Hilangkan end screen
       document.getElementById('endScreen').style.display = 'none';
 
-      // Tampilkan kembali start screen
       const startScreen = document.getElementById('startScreen');
       startScreen.style.display = 'flex';
       startScreen.style.opacity = '1';
 
-      // Sembunyikan UI game
       document.getElementById('instructions').style.opacity = '0';
       document.getElementById('ui').style.opacity = '0';
     }
@@ -326,10 +343,10 @@
     window.addEventListener('load', () => {
       document.getElementById('playButton').addEventListener('click', startGame);
       document.getElementById('tryAgainBtn').addEventListener('click', startGame);
-      document.getElementById('closeBtn').addEventListener('click', backToMenu); // FIXED!
+      document.getElementById('closeBtn').addEventListener('click', backToMenu);
     });
 
-    // Kontrol & Game Logic (sama seperti sebelumnya)
+    // Kontrol
     let isPulling = false;
     let mouseX = 0, mouseY = 0;
 
@@ -398,10 +415,15 @@
 
       if (dist < target.radius) {
         score += 30;
-        createHearts(target.x, target.y, 20); // Hati berterbangan!
+        createHearts(target.x, target.y, 20); // Hati berterbangan
+        message = hitMessages[Math.floor(Math.random() * hitMessages.length)];
       } else {
         score -= 20;
+        message = missMessages[Math.floor(Math.random() * missMessages.length)];
       }
+
+      messageAlpha = 1;
+      messageTimer = 120; // Tampil selama ~2 detik
 
       updateUI();
 
@@ -418,11 +440,12 @@
       arrow.active = false;
     }
 
-    // Animate Loop (tetap sama dengan hearts)
+    // Animate Loop
     function animate() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       updatePositions();
 
+      // Target
       const rings = [target.radius, target.radius * 0.75, target.radius * 0.5, target.radius * 0.25];
       const colors = ['#ff4444', '#ffffff', '#ff8888', '#ffff00'];
       rings.forEach((r, i) => {
@@ -435,6 +458,7 @@
         ctx.stroke();
       });
 
+      // Hati berterbangan
       updateAndDrawHearts();
 
       if (gameStarted && !gameOver) {
@@ -457,6 +481,7 @@
           }
         }
 
+        // Gambar bow & arrow
         ctx.save();
         ctx.translate(bow.x, bow.y);
         ctx.rotate(bow.angle);
@@ -515,6 +540,18 @@
           ctx.fillStyle = '#ff3333';
           ctx.fill();
           ctx.restore();
+        }
+
+        // Animasi Teks Romantis (kembali!)
+        if (messageTimer > 0) {
+          ctx.font = 'bold 50px Comic Sans MS';
+          ctx.fillStyle = `rgba(255, 20, 147, ${messageAlpha})`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(message, canvas.width / 2, canvas.height / 2 - 50);
+
+          messageAlpha = Math.max(0, messageAlpha - 0.015);
+          messageTimer--;
         }
       }
 
